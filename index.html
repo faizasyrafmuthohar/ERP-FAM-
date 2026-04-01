@@ -22,12 +22,8 @@ class ErrorBoundary extends React.Component {
   render(){
     if(this.state.hasError){
       return React.createElement('div',{style:{padding:24,background:'#0d1117',minHeight:'100vh',color:'#fca5a5',fontFamily:'monospace'}},
-        React.createElement('b',null,'Render Error:'),
-        React.createElement('br'),
-        this.state.error?.message||'Unknown error',
-        React.createElement('br'),
-        React.createElement('small',null,this.state.error?.stack||'')
-      );
+        React.createElement('b',null,'Error: '),this.state.error?.message||'Unknown',
+        React.createElement('br'),React.createElement('small',null,this.state.error?.stack||''));
     }
     return this.props.children;
   }
@@ -6280,7 +6276,7 @@ function App() {
     // ── Shared transaksi kas — untuk Laporan Arus Kas Pendanaan ──
     const TX_INIT = [];
     const [sharedTransaksi, setSharedTransaksi] = useState(TX_INIT);
-    const handleLogin = (role, name, loginTime) => { setUser({ role, name, loginTime }); setLoggedIn(true); setActive("dashboard"); sessionStorage.setItem('erpLastPage', 'dashboard'); };
+    const handleLogin = (role, name, loginTime) => { setUser({ role, nama: name, name, loginTime }); setLoggedIn(true); setActive("dashboard"); sessionStorage.setItem('erpLastPage', 'dashboard'); };
     const handleSetActive = (page) => { setActive(page); sessionStorage.setItem('erpLastPage', page); };
     // Wrap setters to persist to DB
     const saveSaldo = (v) => { setSharedSaldo(v); const db2 = getDB(); if (db2)
@@ -6345,8 +6341,8 @@ function App() {
                         React.createElement(Bell, { size: 18, color: C.muted }),
                         React.createElement("div", { style: { position: "absolute", top: -2, right: -2, width: 7, height: 7, background: C.red, borderRadius: "50%" } })),
                     React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 8, padding: "6px 12px", borderRadius: 8, border: `1px solid ${C.border}`, cursor: "pointer" } },
-                        React.createElement("div", { style: { width: 26, height: 26, borderRadius: "50%", background: C.accentBg, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, color: C.accentDark } }, user.name.split(" ").map(n => n[0]).join("").slice(0, 2)),
-                        React.createElement("span", { style: { fontSize: 13, fontWeight: 600, color: C.text } }, user.name.split(" ")[0]),
+                        React.createElement("div", { style: { width: 26, height: 26, borderRadius: "50%", background: C.accentBg, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, color: C.accentDark } }, (user.nama || user.name || "?").split(" ").map(n => n[0]).join("").slice(0, 2)),
+                        React.createElement("span", { style: { fontSize: 13, fontWeight: 600, color: C.text } }, (user.nama || user.name || "User").split(" ")[0]),
                         React.createElement(ChevronDown, { size: 13, color: C.muted })))),
             React.createElement("main", { style: { flex: 1, overflowY: "auto", padding: active === "laporan" ? "16px" : "24px", background: active === "laporan" ? C.dk_bg : C.bg } }, (_b = pageMap[active]) !== null && _b !== void 0 ? _b : (React.createElement("div", { style: { textAlign: "center", padding: 60 } },
                 React.createElement(AlertCircle, { size: 48, color: C.red, style: { marginBottom: 16 } }),
@@ -6360,9 +6356,9 @@ try{
 root.render(React.createElement(ErrorBoundary,null,React.createElement(App)));
 const l=document.getElementById('loading');if(l)l.style.display='none';
 }catch(e){
-document.getElementById('loading').innerHTML='<div style="color:#fca5a5;padding:24px;background:#0d1117;min-height:100vh"><b>JS Error:</b><br>'+e.message+'</div>';
+document.getElementById('loading').innerHTML='<b style="color:red">'+e.message+'</b>';
 }
 }catch(e){
-document.getElementById('loading').innerHTML='<div style="color:#fca5a5;padding:24px;background:#0d1117;min-height:100vh"><b>JS Error:</b><br>'+e.message+'<br><small>'+e.stack+'</small></div>';
+document.getElementById('loading').innerHTML='<div style="color:#fca5a5;padding:24px;background:#0d1117;min-height:100vh"><b>'+e.message+'</b></div>';
 }
 </script></body></html>
