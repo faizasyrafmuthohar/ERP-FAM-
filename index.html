@@ -22,8 +22,8 @@ class ErrorBoundary extends React.Component {
   render(){
     if(this.state.hasError){
       return React.createElement('div',{style:{padding:24,background:'#0d1117',minHeight:'100vh',color:'#fca5a5',fontFamily:'monospace'}},
-        React.createElement('b',null,'Error: '),this.state.error?.message||'Unknown',
-        React.createElement('br'),React.createElement('small',null,this.state.error?.stack||''));
+        React.createElement('b',null,'Error: '),this.state.error?.message,
+        React.createElement('br'),React.createElement('small',null,this.state.error?.stack));
     }
     return this.props.children;
   }
@@ -889,20 +889,21 @@ function DashboardPage({ role, stok, stokBB, stokLimbah, budgetMingguan, totalBB
     const range = getPeriodRange();
     // KPI dari DB langsung sesuai periode
     const [dbBBData, setDbBBData] = useState([]);
-    const [dbJualData, setDbJualData] = useState([]);
+    const [dbProdData, setDbProdData] = useState([]);
     useEffect(() => {
         const db = getDB();
         if (!db)
             return;
         db.from('bahan_baku').select('tgl,items,total_kg').gte('tgl', range.from).lte('tgl', range.to)
             .then(({ data }) => setDbBBData(data || []));
-        db.from('penjualan').select('tgl,kg,harga,produk').gte('tgl', range.from).lte('tgl', range.to)
-            .then(({ data }) => setDbJualData(data || []));
+        db.from('produksi').select('tgl,hasil_kg,bb_masuk').gte('tgl', range.from).lte('tgl', range.to)
+            .then(({ data }) => setDbProdData(data || []));
     }, [range.from, range.to]);
     const kpiBB = dbBBData.reduce((s, r) => s + Number(r.total_kg || (r.items || []).reduce((ss, i) => ss + (i.kg || 0), 0) || 0), 0);
-    const kpiJual = dbJualData.reduce((s, r) => s + Number(r.kg || 0), 0);
-    // Logika stok: Stok Produk Jadi = BB Masuk - Produk Terjual
-    // Stok BB = sisa BB yang belum diproses (tidak dihitung di sini, tampilkan dari props)
+    // Stok Produksi = total hasil produksi periode ini
+    const kpiProd = dbProdData.reduce((s, r) => s + Number(r.hasil_kg || 0), 0);
+    // Stok Bahan Baku = BB Masuk - Stok Produksi
+    const kpiBBSisa = Math.max(0, kpiBB - kpiProd);
     const periodLabel = ((_a = PERIODS.find(p => p.id === periodId)) === null || _a === void 0 ? void 0 : _a.label) || "";
     const [printModal, setPrintModal] = useState(false);
     const [printFrom, setPrintFrom] = useState(MONTH_START);
@@ -1109,8 +1110,8 @@ function DashboardPage({ role, stok, stokBB, stokLimbah, budgetMingguan, totalBB
         React.createElement("div", { style: { display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 14, marginBottom: 20 } },
             React.createElement(KpiCard, { icon: Package, label: `BB Masuk (${periodLabel})`, value: `${fmt(kpiBB)} kg`, sub: `${fmtBulan(range.from)} – ${fmtBulan(range.to)}`, trend: 1, color: "#16a34a" }),
             React.createElement(KpiCard, { icon: Factory, label: `Produk Terjual (${periodLabel})`, value: `${fmt(kpiJual)} kg`, sub: `${fmtBulan(range.from)} – ${fmtBulan(range.to)}`, trend: 1, color: "#2563eb" }),
-            React.createElement(KpiCard, { icon: Boxes, label: "Stok Produk Jadi", value: `${fmt(Math.max(0, kpiBB - kpiJual))} kg`, sub: "BB Masuk - Produk Terjual", color: "#7c3aed" }),
-            React.createElement(KpiCard, { icon: Users, label: "Stok Bahan Baku", value: `${fmt(stokBB || 0)} kg`, sub: "tersedia di gudang", color: "#d97706" })),
+            React.createElement(KpiCard, { icon: Boxes, label: `Stok Produksi (${periodLabel})`, value: `${fmt(kpiProd)} kg`, sub: "Total hasil produksi periode ini", color: "#7c3aed" }),
+            React.createElement(KpiCard, { icon: Users, label: "Stok Bahan Baku", value: `${fmt(kpiBBSisa)} kg`, sub: "BB Masuk - Stok Produksi", color: "#d97706" })),
         role === "direktur" ? (React.createElement("div", { style: { display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 14, marginBottom: 20 } },
             React.createElement(KpiCard, { icon: Wallet, label: "Saldo Kas", value: fmtRp(saldoKas || 0), sub: `per ${fmtTgl(TODAY)}`, color: "#0891b2" }),
             React.createElement(KpiCard, { icon: TrendingDown, label: "Total Hutang", value: fmtRp(totalHutang || 0), sub: `${hutangCount || 0} kreditur aktif`, color: "#dc2626" }),
